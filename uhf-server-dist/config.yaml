@@ -1,0 +1,22 @@
+name: "UHF Server"
+version: "1.0.0"
+slug: "uhf-server"
+description: "UHF DVR Server for IPTV"
+arch:
+  - amd64
+  - armv7
+  - aarch64
+startup: "services"
+ports:
+  8000/tcp: 8000
+  9000/tcp: 9000
+map:
+  - recordings: /data/recordings
+options:
+  port: 8000
+  recordings_dir: "/data/recordings"
+  password: ""
+schema:
+  port: int
+  recordings_dir: str
+  password: str
