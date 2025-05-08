@@ -1,12 +1,39 @@
-# https://developers.home-assistant.io/docs/add-ons/configuration#add-on-dockerfile
-ARG BUILD_FROM
-FROM $BUILD_FROM
+FROM ubuntu:25.04
 
-# Execute during the build of the image
-ARG TEMPIO_VERSION BUILD_ARCH
-RUN \
-    curl -sSLf -o /usr/bin/tempio \
-    "https://github.com/home-assistant/tempio/releases/download/${TEMPIO_VERSION}/tempio_${BUILD_ARCH}"
+# Avoid prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy root filesystem
-COPY rootfs /
+# Install required dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ffmpeg \
+    unzip \
+    ca-certificates \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create directory for recordings
+RUN mkdir -p /recordings
+
+# Create directory for db
+RUN mkdir -p /var/lib/uhf-server
+
+# Set working directory
+WORKDIR /app
+
+# Install UHF server (modified to not use sudo)
+RUN curl -sL https://link.uhfapp.com/setup.sh > setup.sh && \
+    chmod +x setup.sh && \
+    sed -i 's/sudo //g' setup.sh && \
+    bash setup.sh && \
+    rm setup.sh
+
+# Expose default port
+EXPOSE ${PORT}
+
+# Set healthcheck
+HEALTHCHECK --interval=60s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:${PORT}/server/stats || exit 1
+
+# Default command
+CMD ["bash"]
